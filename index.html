@@ -1,98 +1,71 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Assistant Souscription Hiscox</title>
+  <title>Analyse RC Pro</title>
+  <script src="https://apifreellm.com/apifree.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 50px;
-      background-color: #f5f5f5;
+      max-width: 600px;
+      margin: 50px auto;
     }
-    img {
-      max-width: 200px;
-      margin-bottom: 30px;
-    }
-    input[type="text"], textarea {
+    input, button, textarea {
+      width: 100%;
+      margin-top: 10px;
+      margin-bottom : 15px ;
       padding: 10px;
-      width: 300px;
-      font-size: 16px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      font-size: 1em;
     }
     button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #d40000;
+      background-color: #007BFF;
       color: white;
       border: none;
       cursor: pointer;
-      border-radius: 4px;
     }
     button:hover {
-      background-color: #a00000;
+      background-color: #0056b3;
     }
-    
-    
-    textarea#resultats {
-  background-color: #e0e0e0;
-  color: #333;
-  width: 300px;
-  height: 100px;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  resize: none;
-}
-    
+    #resultat {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
+  <h1>Assistant de Souscription</h1>
 
-  <h1>Assistant Souscription</h1>
+  <label for="activite">Activité :</label>
+  <input type="text" id="activite" placeholder="Ex : Consultant web">
 
+  <label for="ca">Chiffre d'affaires (€) :</label>
+  <input type="number" id="ca" placeholder="Ex : 75000">
 
-  <!-- Champ Description de l'activité -->
-  <div>
-    <textarea placeholder="Description de l'activité" id="activite" rows="4"></textarea>
-  </div>
+  <button onclick="analyserRisque()">Envoyer</button>
 
-  <!-- Champ Chiffre d'affaires -->
-  <div>
-    <input type="text" placeholder="Chiffre d'affaires annuel (€)" id="ca">
-  </div>
+  <h2>Résultat :</h2>
+  <div id="resultat">En attente de votre saisie…</div>
 
-  <!-- Bouton Envoyer -->
-  <div>
-    <button onclick="envoyerInfos()" style="margin-bottom: 30px;">Envoyer</button>
-  </div>
-  
-  
-  <div>
-  <textarea id="resultats" placeholder="Résultats de l'Analyse" readonly></textarea>
-</div>
-  
+  <script>
+    async function analyserRisque() {
+      const activite = document.getElementById("activite").value.trim();
+      const ca = document.getElementById("ca").value.trim();
+      const resultatDiv = document.getElementById("resultat");
 
-<script>
-  async function envoyerInfos() {
-    const activite = document.getElementById('activite').value;
-    const ca = document.getElementById('ca').value;
-    const resultatEl = document.getElementById('resultats');
+      if (!activite || !ca) {
+        resultatDiv.textContent = "Veuillez remplir tous les champs.";
+        return;
+      }
 
-    // Clé API Cohere (remplace par ta vraie clé)
-    const API_KEY = "ZXw0bYdyLChPjJh4IDQ9npKhToU0NRzICnzejsCn";
+      resultatDiv.textContent = "Analyse en cours...";
 
-    // Construction du prompt pour l'IA
-    const prompt = `Sur la base de ces 2 données d'entreprise :
-    
-    Activité : ${activite}
-    Chiffre d'affaires annuel : ${ca} €
-
-    Peux tu me faire une analyse du risque et me dire si 1 : l’activité entre dans la liste des activités hors cible pour Hiscox à savoir la liste suivante :
+      const prompt = `Sur la base de ces 2 données d'entreprise : activité : "${activite}" et chiffre d'affaire : ${ca}, 
+      
+      
+      Peux tu me faire une analyse du risque et me dire si 1 : l’activité entre dans la liste des activités hors cible pour Hiscox à savoir la liste suivante :
 activité réglementée soumise à obligation d’assurance responsabilité civile
 Fabrication  et/ou commercialisation de produits ne respectant pas les normes obligatoires relatives à la sécurité des consommateurs
 Fabrication  et/ou commercialisation de produits industriellement (fabrication à la chaîne en grande quantité et/ou commerce de gros)
@@ -466,43 +439,17 @@ Une fois que cette analyse de souscription a été réalisé, créer moi une ré
 
 Enfin, sur la base de l’activité, dis moi quelles options parmi Assurance Cyber, Assurance Tout risque Risque Informatique ou Assurance Multirisque Pro pourraient etre pertinent à proposer à ce client.
 
-    
-    
-    `;
+      
+      
+      `;
 
-    try {
-      const response = await fetch("https://api.cohere.ai/v1/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "command", // ou "command-light" selon ton plan
-          prompt: prompt,
-          max_tokens: 300,
-          temperature: 0.7
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.generations && data.generations.length > 0) {
-        resultatEl.value = data.generations[0].text.trim();
-      } else {
-        resultatEl.value = "Aucune réponse reçue de l'IA.";
+      try {
+        const response = await apifree.chat(prompt);
+        resultatDiv.textContent = response;
+      } catch (error) {
+        resultatDiv.textContent = "Erreur lors de l'analyse : " + error.message;
       }
-    } catch (error) {
-      console.error("Erreur API Cohere :", error);
-      resultatEl.value = "Erreur lors de l'analyse. Vérifie ta clé API ou ta connexion.";
     }
-  }
-</script>
-  
-
-
-  
-  
-
+  </script>
 </body>
 </html>
